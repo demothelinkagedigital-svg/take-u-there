@@ -44,6 +44,47 @@ function Row({
 
 export default function Contact() {
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    const formData = new FormData(e.currentTarget);
+    const data = {
+      access_key: "a9c82791-9536-43e2-8ac5-75541a421b0b",
+      full_name: formData.get("full_name"),
+      phone: formData.get("phone"),
+      email: formData.get("email"),
+      property_address: formData.get("property_address"),
+      property_details: formData.get("property_details"),
+    };
+
+    try {
+      const response = await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setSubmitted(true);
+      } else {
+        setError("Failed to submit form. Please try again.");
+      }
+    } catch (err) {
+      setError("An error occurred. Please try again later.");
+      console.error("Form submission error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <>
@@ -136,20 +177,18 @@ export default function Contact() {
                   </div>
                 ) : (
                   <form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      setSubmitted(true);
-                    }}
+                    onSubmit={handleSubmit}
                     className="glass-strong rounded-3xl p-6 sm:p-8 space-y-4"
                   >
-                    <Field label="Full Name" type="text" placeholder="Jane Doe" required />
+                    <Field label="Full Name" type="text" name="full_name" placeholder="Jane Doe" required />
                     <div className="grid sm:grid-cols-2 gap-4">
-                      <Field label="Phone" type="tel" placeholder="(816) 555-0100" required />
-                      <Field label="Email" type="email" placeholder="you@email.com" required />
+                      <Field label="Phone" type="tel" name="phone" placeholder="(816) 555-0100" required />
+                      <Field label="Email" type="email" name="email" placeholder="you@email.com" required />
                     </div>
                     <Field
                       label="Property Address"
                       type="text"
+                      name="property_address"
                       placeholder="123 Main St, Kansas City, MO"
                       required
                     />
@@ -158,17 +197,24 @@ export default function Contact() {
                         Tell us about your property
                       </label>
                       <textarea
+                        name="property_details"
                         rows={4}
                         placeholder="Condition, timeline, situation…"
                         className="mt-1.5 w-full bg-white/[0.04] border border-white/10 rounded-xl px-4 py-3 text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary/60 transition-colors resize-none"
                       />
                     </div>
+                    {error && (
+                      <div className="text-sm text-red-500 bg-red-500/10 border border-red-500/30 rounded-lg p-3">
+                        {error}
+                      </div>
+                    )}
                     <button
                       type="submit"
-                      className="group w-full inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground rounded-xl px-6 py-4 text-sm font-medium glow-red hover:scale-[1.01] transition-transform"
+                      disabled={loading}
+                      className="group w-full inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground rounded-xl px-6 py-4 text-sm font-medium glow-red hover:scale-[1.01] transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Get My Cash Offer
-                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                      {loading ? "Sending..." : "Get My Cash Offer"}
+                      {!loading && <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />}
                     </button>
                     <p className="text-[11px] text-center text-muted-foreground">
                       By submitting, you agree to be contacted about your property. No spam, ever.
